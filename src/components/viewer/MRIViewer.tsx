@@ -1,20 +1,48 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Niivue } from '@niivue/niivue';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { Niivue, NVImage } from '@niivue/niivue';
 
 interface MRIViewerProps {
     url?: string;
+    overlays?: { url: string; color?: string; opacity?: number; name: string }[];
     className?: string;
+    onLocationChange?: (location: any) => void;
 }
 
-export default function MRIViewer({
-    url = 'https://niivue.github.io/niivue/images/mni152.nii.gz', // Default sample
-    className
-}: MRIViewerProps) {
+export interface MRIViewerHandle {
+    setOpacity: (index: number, opacity: number) => void;
+    setVisibility: (index: number, visible: boolean) => void;
+    setSliceType: (type: number) => void;
+}
+
+const MRIViewer = forwardRef<MRIViewerHandle, MRIViewerProps>(({
+    url = 'https://niivue.github.io/niivue/images/mni152.nii.gz',
+    overlays = [],
+    className,
+    onLocationChange
+}, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nvRef = useRef<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    useImperativeHandle(ref, () => ({
+        setOpacity: (index: number, opacity: number) => {
+            if (nvRef.current && nvRef.current.volumes[index + 1]) {
+                nvRef.current.setOpacity(index + 1, opacity);
+            }
+        },
+        setVisibility: (index: number, visible: boolean) => {
+            if (nvRef.current && nvRef.current.volumes[index + 1]) {
+                nvRef.current.setOpacity(index + 1, visible ? 1 : 0);
+            }
+        },
+        setSliceType: (type: number) => {
+            if (nvRef.current) {
+                nvRef.current.setSliceType(type);
+            }
+        }
+    }));
 
     useEffect(() => {
         if (!canvasRef.current) return;
@@ -26,31 +54,39 @@ export default function MRIViewer({
             multiplanarForceRender: true,
         });
 
+        nv.onLocationChange = (location: any) => {
+            onLocationChange?.(location);
+        };
+
         nv.attachToCanvas(canvasRef.current);
 
-        const loadVolume = async () => {
+        const loadVolumes = async () => {
             try {
-                await nv.loadVolumes([{ url }]);
+                const volumesToLoad = [
+                    { url, colorMap: 'gray', opacity: 1 },
+                    ...overlays.map(o => ({
+                        url: o.url,
+                        colorMap: o.color || 'red',
+                        opacity: o.opacity !== undefined ? o.opacity : 0.5,
+                        name: o.name
+                    }))
+                ];
+
+                await nv.loadVolumes(volumesToLoad);
                 nv.setSliceType(nv.sliceTypeMultiplanar);
                 setIsLoaded(true);
             } catch (error) {
-                console.error('Failed to load volume:', error);
+                console.error('Failed to load volumes:', error);
             }
         };
 
-        loadVolume();
+        loadVolumes();
         nvRef.current = nv;
 
         return () => {
-            // Cleanup
+            // nv.terminate(); // If niivue has a terminate method
         };
-    }, [url]);
-
-    const handleSliceType = (type: number) => {
-        if (nvRef.current) {
-            nvRef.current.setSliceType(type);
-        }
-    };
+    }, [url, overlays, onLocationChange]);
 
     return (
         <div className={`flex flex-col gap-4 ${className}`}>
@@ -63,44 +99,16 @@ export default function MRIViewer({
                     </div>
                 )}
 
-                <div className="absolute top-4 right-4 flex flex-col gap-2">
-                    <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-lg border border-slate-700 text-xs text-slate-300 font-medium">
-                        Window: Right Click + Drag
+                <div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-none">
+                    <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-lg border border-slate-700 text-[10px] text-slate-300 font-bold uppercase tracking-wider">
+                        Sync Active
                     </div>
-                    <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md rounded-lg border border-slate-700 text-xs text-slate-300 font-medium">
-                        Slice: Scroll Wheel
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-slate-900/50 backdrop-blur-md rounded-xl border border-slate-800">
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handleSliceType(0)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
-                    >
-                        Axial
-                    </button>
-                    <button
-                        onClick={() => handleSliceType(1)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
-                    >
-                        Coronal
-                    </button>
-                    <button
-                        onClick={() => handleSliceType(2)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors"
-                    >
-                        Sagittal
-                    </button>
-                    <button
-                        onClick={() => handleSliceType(3)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
-                    >
-                        Multiplanar
-                    </button>
                 </div>
             </div>
         </div>
     );
-}
+});
+
+MRIViewer.displayName = 'MRIViewer';
+
+export default MRIViewer;
