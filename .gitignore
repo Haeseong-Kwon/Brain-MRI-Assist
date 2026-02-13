@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+/temp-app/
+
+# Next.js Build
+.next/
+out/
+build/
+
+# Environment Variables
+.env*.local
+
+# Medical Imaging Data (Large Files)
+*.nii
+*.nii.gz
+*.dcm
+*.dicom
+/data/raw/
+/data/processed/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.class
+venv/
+.venv/
+
+# OS files
+.DS_Store
