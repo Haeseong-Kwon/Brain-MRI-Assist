@@ -4,12 +4,23 @@ import { useRef, useState } from 'react';
 import MRIViewer, { MRIViewerHandle } from '@/components/viewer/MRIViewer';
 import LayerControl from '@/components/mri/LayerControl';
 import MetricsDashboard from '@/components/mri/MetricsDashboard';
-import { ArrowLeft, Share2, Download, Info, Settings2 } from 'lucide-react';
+import VolumeChart from '@/components/mri/VolumeChart';
+import ReportGenerator from '@/components/mri/ReportGenerator';
+import { ArrowLeft, Share2, Download, Info, Settings2, History } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MRIViewerPage({ params }: { params: { id: string } }) {
     const viewerRef = useRef<MRIViewerHandle>(null);
     const [location, setLocation] = useState<any>(null);
+
+    const mockReportData = {
+        patientId: 'PAT-2024-001',
+        scanId: params.id,
+        diceScore: 0.942,
+        totalVolume: 1450,
+        tumorVolume: 42.5,
+        diagnosis: 'Suspected Glioma (G3)'
+    };
 
     const [layers, setLayers] = useState([
         {
@@ -77,10 +88,6 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                         <Share2 className="w-4 h-4" />
                         Share
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors">
-                        <Download className="w-4 h-4" />
-                        Report
-                    </button>
                 </div>
             </header>
 
@@ -100,6 +107,11 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                         <button onClick={() => viewerRef.current?.setSliceType(1)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-indigo-400 transition-colors">Coronal</button>
                         <button onClick={() => viewerRef.current?.setSliceType(2)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-indigo-400 transition-colors">Sagittal</button>
                         <button onClick={() => viewerRef.current?.setSliceType(3)} className="px-6 py-2 bg-indigo-500/20 text-indigo-400 rounded-lg text-xs font-bold uppercase tracking-wider border border-indigo-500/30">Multiplanar</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <VolumeChart />
+                        <ReportGenerator data={mockReportData} />
                     </div>
                 </div>
 
