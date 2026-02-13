@@ -26,7 +26,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-50;
+    @apply bg-[#050810] text-slate-200 selection:bg-indigo-500/30;
     background-image:
       radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.15) 0px, transparent 50%),
       radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
@@ -40,6 +40,11 @@
   }
 
   .glass-card {
-    @apply bg-slate-900/60 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-2xl;
+    @apply bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .accent-indigo {
+    @apply text-indigo-400 font-semibold;
   }
 }

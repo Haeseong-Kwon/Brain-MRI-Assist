@@ -6,12 +6,14 @@ import LayerControl from '@/components/mri/LayerControl';
 import MetricsDashboard from '@/components/mri/MetricsDashboard';
 import VolumeChart from '@/components/mri/VolumeChart';
 import ReportGenerator from '@/components/mri/ReportGenerator';
+import ShareModal from '@/components/mri/ShareModal';
 import { ArrowLeft, Share2, Download, Info, Settings2, History } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MRIViewerPage({ params }: { params: { id: string } }) {
     const viewerRef = useRef<MRIViewerHandle>(null);
     const [location, setLocation] = useState<any>(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const mockReportData = {
         patientId: 'PAT-2024-001',
@@ -84,7 +86,10 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                         </div>
                         <Settings2 className="w-4 h-4 text-slate-500" />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-xl text-sm font-medium transition-colors">
+                    <button
+                        onClick={() => setIsShareModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-xl text-sm font-medium transition-colors"
+                    >
                         <Share2 className="w-4 h-4" />
                         Share
                     </button>
@@ -148,6 +153,11 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                     </div>
                 </aside>
             </div>
+            <ShareModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                scanId={params.id}
+            />
         </main>
     );
 }

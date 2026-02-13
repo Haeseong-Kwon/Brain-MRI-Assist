@@ -5,7 +5,8 @@ import numpy as np
 import os
 import json
 import argparse
-# import supabase # Will be uncommented once credentials are provided
+import datetime
+import supabase
 
 # --- Dummy Model (Placeholder for a real segmentation model like U-Net or UNETR) ---
 class DummySegmentationModel(nn.Module):
@@ -173,36 +174,41 @@ def export_mask_as_nifti(mask_data: np.ndarray, original_nifti_path: str, output
 
 def setup_supabase_client(url, key):
     # global supabase_client
-    # from supabase import create_client, Client
-    # supabase_client: Client = create_client(url, key)
-    print("Supabase client setup (placeholder). Real setup will use credentials.")
-    return True # Simulate success
+    from supabase import create_client, Client
+    supabase_client: Client = create_client(url, key)
+    print("Supabase client initialized.")
+    return supabase_client
 
-def upload_to_supabase_storage(bucket_name, file_path, storage_path):
-    # if not supabase_client:
-    #     raise RuntimeError("Supabase client not initialized.")
-    #
-    # with open(file_path, 'rb') as f:
-    #     data = f.read()
-    #     response = supabase_client.storage.from_(bucket_name).upload(storage_path, data)
-    #     if response.get('error'):
-    #         raise Exception(f"Supabase Storage upload failed: {response['error']}")
-    #     print(f"File uploaded to Supabase Storage: {storage_path}")
-    #     return response['Key'] # Or similar identifier
-    print(f"Uploaded {file_path} to Supabase Storage at {storage_path} (placeholder).")
-    return f"supabase://{bucket_name}/{storage_path}"
+def upload_to_supabase_storage(supabase_client, bucket_name, file_path, storage_path):
+    if not supabase_client:
+        raise RuntimeError("Supabase client not initialized.")
+    
+    with open(file_path, 'rb') as f:
+        data = f.read()
+        response = supabase_client.storage.from_(bucket_name).upload(storage_path, data)
+        # Supabase Python 클라이언트의 upload 메서드는 'data' 필드를 직접 반환하지 않습니다.
+        # 에러 체크 로직은 API 응답 구조에 따라 조정해야 합니다.
+        # 일반적으로 upload 성공 시 response 객체에 error 필드가 None이거나,
+        # data 필드에 파일 정보가 포함될 수 있습니다.
+        # 현재 라이브러리 버전 기준으로 성공 시 `{'path': '...', 'id': '...'}`와 같은
+        # 딕셔너리를 반환하고, 실패 시 `{'error': {...}}` 형태일 수 있습니다.
+        if "error" in response and response["error"]:
+            raise Exception(f"Supabase Storage upload failed: {response['error']}")
+        print(f"File uploaded to Supabase Storage: {storage_path}")
+        return supabase_client.storage.from_(bucket_name).get_public_url(storage_path) # 공개 URL 반환
 
-def insert_results_to_supabase_db(table_name, results_data):
-    # if not supabase_client:
-    #     raise RuntimeError("Supabase client not initialized.")
-    #
-    # response = supabase_client.table(table_name).insert(results_data).execute()
-    # if response.get('error'):
-    #     raise Exception(f"Supabase DB insert failed: {response['error']}")
-    # print(f"Results inserted into Supabase table {table_name}: {results_data}")
-    # return response['data']
-    print(f"Inserted results into Supabase table {table_name}: {results_data} (placeholder).")
-    return {"id": "dummy_id"}
+def insert_results_to_supabase_db(supabase_client, table_name, results_data):
+    if not supabase_client:
+        raise RuntimeError("Supabase client not initialized.")
+    
+    response = supabase_client.table(table_name).insert(results_data).execute()
+    
+    # Supabase Python 클라이언트의 execute()는 결과 딕셔너리를 반환합니다.
+    # 성공하면 'data' 필드에 삽입된 레코드가, 실패하면 'error' 필드에 오류가 담깁니다.
+    if "error" in response and response["error"]:
+        raise Exception(f"Supabase DB insert failed: {response['error']}")
+    print(f"Results inserted into Supabase table {table_name}: {results_data}")
+    return response["data"]
 
 
 # --- Main Execution Flow ---

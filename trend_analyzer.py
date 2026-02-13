@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
 
-# import supabase # Supabase 설치 후 주석 해제
+import supabase # Supabase 설치 후 주석 해제
 
 # --- Supabase Configuration (Placeholder) ---
 # SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -22,10 +22,10 @@ def get_supabase_client(url, key):
         print("경고: Supabase 자격 증명이 설정되지 않았습니다. 더미 클라이언트를 사용합니다.")
         return DummySupabaseClient()
     
-    # from supabase import create_client, Client # supabase 설치 후 주석 해제
-    # return create_client(url, key)
-    print("Supabase 클라이언트 (더미) 초기화.")
-    return DummySupabaseClient() # 실제 클라이언트 대신 더미 클라이언트 반환
+    from supabase import create_client, Client # supabase 설치 후 주석 해제
+    return create_client(url, key)
+    # print("Supabase 클라이언트 (더미) 초기화.")
+    # return DummySupabaseClient() # 실제 클라이언트 대신 더미 클라이언트 반환
 
 class DummySupabaseClient:
     """Supabase 클라이언트가 없을 때 사용할 더미 클라이언트."""
@@ -239,9 +239,9 @@ def main():
     parser = argparse.ArgumentParser(description="환자의 종양 부피 추세를 분석하고 임상 소견을 생성합니다.")
     parser.add_argument("--patient_id", type=str, required=True,
                         help="분석할 환자의 고유 ID.")
-    parser.add_argument("--supabase_url", type=str, default=os.environ.get("SUPABASE_URL", "YOUR_SUPABASE_URL"),
+    parser.add_argument("--supabase_url", type=str, default=os.environ.get("SUPABASE_URL", "https://zlzaijjxoekmryzdeskx.supabase.co"),
                         help="Supabase 프로젝트 URL.")
-    parser.add_argument("--supabase_key", type=str, default=os.environ.get("SUPABASE_KEY", "YOUR_SUPABASE_ANON_KEY"),
+    parser.add_argument("--supabase_key", type=str, default=os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsemFpamp4b2VrbXJ5emRlc2t4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDk2OTg2OSwiZXhwIjoyMDg2NTQ1ODY5fQ.UXLTEGEEoPMLRfMkuQK94f3XLh5C1LEUf3mt7WaZfVI"),
                         help="Supabase 프로젝트 Anon 키.")
     parser.add_argument("--output_file", type=str, default=None,
                         help="결과를 JSON 파일로 저장할 경로. 지정하지 않으면 콘솔에 출력됩니다.")
