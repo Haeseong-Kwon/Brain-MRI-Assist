@@ -1,5 +1,11 @@
 # [Research Report] Brain MRI Assist: Deep Learning-Based Automated Neuroimaging Segmentation and Diagnostic Support System
 
+<div align="center">
+  <img src="brain_mri_assist_demo.gif" width="85%" />
+  <br>
+  <em>U-Net 기반의 실시간 뇌 MRI 병변 세그멘테이션 시연입니다. 슬라이스 이동에 따른 적응형 마스킹 및 환부 부피 분석 워크플로우를 시각화합니다.</em>
+</div>
+
 ## 1. Clinical Background & Research Objective
 
 뇌 자기공명영상(Magnetic Resonance Imaging, MRI)은 중추신경계(Central Nervous System) 질환의 진단과 치료 계획 수립에 있어 중추적인 역할을 수행하는 비침습적 진단 도구이다. 그러나 뇌 MRI 판독 과정은 고도의 전문성을 요하며, 특히 종양(Tumor), 뇌졸중(Stroke) 병변 및 해부학적 구조물(Ventricle, Gray/White Matter)의 정밀한 분할(Segmentation)은 다음과 같은 한계점을 수반한다:

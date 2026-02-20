@@ -14,6 +14,8 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
     const viewerRef = useRef<MRIViewerHandle>(null);
     const [location, setLocation] = useState<any>(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isAnalyzed, setIsAnalyzed] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const mockReportData = {
         patientId: 'PAT-2024-001',
@@ -31,15 +33,15 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
             opacity: 0.5,
             visible: true,
             color: '#4f46e5',
-            url: 'https://niivue.github.io/niivue/images/mni152.nii.gz'
+            url: '/mni152.nii.gz'
         },
         {
             id: 'tumor',
             name: 'Tumor (AI-Predicted)',
             opacity: 0.8,
-            visible: true,
+            visible: false, // Hidden initially
             color: '#ef4444',
-            url: 'https://niivue.github.io/niivue/images/mni152.nii.gz' // Mock overlay
+            url: '/mni152.nii.gz' // Mock overlay
         },
     ]);
 
@@ -56,6 +58,36 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
         viewerRef.current?.setVisibility(index, !layer.visible);
     };
 
+    const runAnalysis = () => {
+        setIsAnalyzing(true);
+        // Immediate start to bypass "Generating" delay
+        setTimeout(() => {
+            setIsAnalyzed(true);
+            setIsAnalyzing(false);
+
+            // Show tumor layer with smooth fade-in
+            const tumorLayerId = 'tumor';
+            const index = layers.findIndex(l => l.id === tumorLayerId);
+
+            setLayers(prev => prev.map(l => l.id === tumorLayerId ? { ...l, visible: true, opacity: 0 } : l));
+            viewerRef.current?.setVisibility(index, true);
+            viewerRef.current?.setOpacity(index, 0);
+
+            let currentOpacity = 0;
+            const targetOpacity = 0.8;
+            const fadeInterval = setInterval(() => {
+                currentOpacity += 0.05;
+                if (currentOpacity >= targetOpacity) {
+                    currentOpacity = targetOpacity;
+                    clearInterval(fadeInterval);
+                }
+                setLayers(prev => prev.map(l => l.id === tumorLayerId ? { ...l, opacity: currentOpacity } : l));
+                viewerRef.current?.setOpacity(index, currentOpacity);
+            }, 50);
+
+        }, 100);
+    };
+
     return (
         <main className="min-h-screen p-6 lg:p-10 flex flex-col gap-8">
             {/* Header */}
@@ -69,10 +101,36 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">Analysis: {params.id}</h1>
-                        <p className="text-slate-400 text-sm flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            AI Processing Complete
-                        </p>
+                        {!isAnalyzed ? (
+                            <div className="flex items-center gap-3">
+                                <p className="text-slate-400 text-sm flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                                    Ready for Segmentation
+                                </p>
+                                <button
+                                    onClick={runAnalysis}
+                                    disabled={isAnalyzing}
+                                    className="ml-4 px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Settings2 className="w-3 h-3" />
+                                            Run AI Analysis
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="text-emerald-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-500">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                AI Analysis Complete
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -103,6 +161,7 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                     <MRIViewer
                         ref={viewerRef}
                         className="w-full"
+                        url="/mni152.nii.gz"
                         overlays={layers.map(l => ({ url: l.url, color: l.color, opacity: l.opacity, name: l.name }))}
                         onLocationChange={setLocation}
                     />
@@ -114,7 +173,7 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                         <button onClick={() => viewerRef.current?.setSliceType(3)} className="px-6 py-2 bg-indigo-500/20 text-indigo-400 rounded-lg text-xs font-bold uppercase tracking-wider border border-indigo-500/30">Multiplanar</button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 ${isAnalyzed ? 'opacity-100 translate-y-0' : 'opacity-50 blur-sm grayscale pointer-events-none'}`}>
                         <VolumeChart />
                         <ReportGenerator data={mockReportData} />
                     </div>
@@ -145,10 +204,24 @@ export default function MRIViewerPage({ params }: { params: { id: string } }) {
                                     <p className="text-sm font-medium">Male</p>
                                 </div>
                             </div>
-                            <div className="pt-4 border-t border-white/5">
-                                <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Diagnosis</label>
-                                <p className="text-sm font-medium text-indigo-300">Suspected Glioma (G3)</p>
-                            </div>
+
+                            {isAnalyzed && (
+                                <div className="pt-4 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-700">
+                                    <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Diagnosis</label>
+                                    <p className="text-sm font-medium text-emerald-400 font-bold">Suspected Glioma (G3)</p>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-2">
+                                        <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                                            <label className="text-[9px] text-red-300 uppercase font-bold">Tumor Vol</label>
+                                            <p className="text-lg font-bold text-red-400">42.5 <span className="text-xs font-normal">cm³</span></p>
+                                        </div>
+                                        <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                                            <label className="text-[9px] text-indigo-300 uppercase font-bold">Confidence</label>
+                                            <p className="text-lg font-bold text-indigo-400">94.2%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </aside>
