@@ -44,8 +44,13 @@ const MRIViewer = forwardRef<MRIViewerHandle, MRIViewerProps>(({
         }
     }));
 
+    const onLocationChangeRef = useRef(onLocationChange);
     useEffect(() => {
-        if (!canvasRef.current) return;
+        onLocationChangeRef.current = onLocationChange;
+    }, [onLocationChange]);
+
+    useEffect(() => {
+        if (!canvasRef.current || nvRef.current) return;
 
         const nv = new Niivue({
             backColor: [0, 0, 0, 1],
@@ -55,7 +60,7 @@ const MRIViewer = forwardRef<MRIViewerHandle, MRIViewerProps>(({
         });
 
         nv.onLocationChange = (location: any) => {
-            onLocationChange?.(location);
+            onLocationChangeRef.current?.(location);
         };
 
         nv.attachToCanvas(canvasRef.current);
@@ -86,7 +91,7 @@ const MRIViewer = forwardRef<MRIViewerHandle, MRIViewerProps>(({
         return () => {
             // nv.terminate(); // If niivue has a terminate method
         };
-    }, [url, overlays, onLocationChange]);
+    }, []);
 
     return (
         <div className={`flex flex-col gap-4 ${className}`}>
